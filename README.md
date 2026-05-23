@@ -1,5 +1,7 @@
 # xmpp-mcp
 
+[![CI](https://github.com/alcalin/xmpp-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/alcalin/xmpp-mcp/actions/workflows/ci.yml)
+
 An [MCP](https://modelcontextprotocol.io) server that lets an LLM operate over
 **XMPP** — send and receive direct and group-chat messages, manage presence and
 rosters, run service discovery, and apply **XEP-0258 security labels**.
