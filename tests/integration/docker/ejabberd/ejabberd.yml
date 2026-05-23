@@ -1,0 +1,197 @@
+# ejabberd config for the xmpp-mcp lab — same domain and accounts as the
+# Openfire compose, so existing scripts (start-lab.py, seed_chat.py,
+# scripts/demo_*.py) work unchanged. The headline difference: MAM
+# (XEP-0313) on MUC rooms actually answers IQ queries here.
+
+hosts:
+  - xmpp.test
+  # Aliasing 127.0.0.1 as a vhost so HTTP requests to http://127.0.0.1:5280/...
+  # find the modules (otherwise mod_conversejs crashes with module_not_loaded).
+  # No accounts live on this host — it's only for browser HTTP routing.
+  - "127.0.0.1"
+
+loglevel: warning
+
+# Plain auth + scram. SCRAM-SHA-1 is what slixmpp will negotiate.
+auth_method: internal
+auth_password_format: scram
+
+# Use SQLite for the archive — gives MAM a real backend that survives
+# restarts on the same volume. Mnesia (the default) would also work but
+# is harder to inspect.
+default_db: sql
+new_sql_schema: true
+sql_type: sqlite
+sql_database: "/home/ejabberd/database/ejabberd.db"
+
+acl:
+  admin:
+    user:
+      - admin: xmpp.test
+  local:
+    user_regexp: ""
+
+access_rules:
+  local:
+    allow: local
+  c2s:
+    deny: blocked
+    allow: all
+  announce:
+    allow: admin
+  configure:
+    allow: admin
+  muc_create:
+    allow: local
+  pubsub_createnode:
+    allow: local
+
+shaper:
+  normal: 1000
+  fast: 50000
+
+shaper_rules:
+  max_user_sessions: 10
+  max_user_offline_messages:
+    5000: admin
+    100: all
+  c2s_shaper:
+    none: admin
+    normal: all
+  s2s_shaper: fast
+
+# Disable ACME / TLS for the lab. The bot uses XMPP_TLS_INSECURE anyway;
+# this just avoids the cert generation startup hang.
+certfiles: []
+acme:
+  auto: false
+
+# Listeners. C2S=5222, HTTP admin=5280, external components=5275.
+listen:
+  -
+    port: 5222
+    ip: "::"
+    module: ejabberd_c2s
+    starttls_required: false
+    starttls: false
+    access: c2s
+    shaper: c2s_shaper
+    max_stanza_size: 262144
+  -
+    port: 5269
+    ip: "::"
+    module: ejabberd_s2s_in
+    max_stanza_size: 524288
+  -
+    port: 5275
+    ip: "::"
+    module: ejabberd_service
+    access: all
+    password: "component-secret"
+    global_routes: false
+  -
+    port: 5280
+    ip: "::"
+    module: ejabberd_http
+    # Requests to http://127.0.0.1:5280/... carry Host: 127.0.0.1, which
+    # isn't a configured vhost — without this, mod_conversejs lookups fail.
+    default_host: xmpp.test
+    request_handlers:
+      /admin: ejabberd_web_admin
+      /api: mod_http_api
+      /upload: mod_http_upload
+      /xmpp: ejabberd_http_ws       # WebSocket transport for browser clients
+      /bosh: mod_bosh               # BOSH fallback
+      /conversejs: mod_conversejs   # Web XMPP client at http://127.0.0.1:5280/conversejs
+
+# REST API access — match Openfire's basic-auth pattern so OPENFIRE_ADMIN_USER
+# / OPENFIRE_ADMIN_PASSWORD env still authenticates the start script when it
+# uses ejabberd's API.
+api_permissions:
+  "console commands":
+    from: ejabberd_ctl
+    who: all
+    what: "*"
+  "admin access":
+    who:
+      access:
+        allow:
+          - acl: admin
+      oauth:
+        scope: "ejabberd:admin"
+        access:
+          allow:
+            - acl: admin
+    what:
+      - "*"
+      - "!stop"
+      - "!start"
+  "public commands":
+    who:
+      ip: "127.0.0.1/8"
+    what:
+      - status
+      - connected_users_number
+
+modules:
+  mod_adhoc: {}
+  mod_admin_extra: {}
+  mod_bosh: {}
+  mod_conversejs:
+    websocket_url: "ws://@HOST@:5280/xmpp"
+  mod_caps: {}
+  mod_carboncopy: {}
+  mod_client_state: {}
+  mod_configure: {}
+  mod_disco: {}
+  mod_fail2ban: {}
+  mod_http_api: {}
+  mod_last: {}
+  # MAM — the whole point of using ejabberd. `request_activates_archiving`
+  # off means messages are archived for everyone by default, no opt-in
+  # needed by clients.
+  mod_mam:
+    assume_mam_usage: true
+    default: always
+    user_mucsub_from_muc_archive: true
+  mod_muc:
+    host: "conference.@HOST@"
+    access:
+      allow: all
+    access_admin:
+      allow: admin
+    access_create: muc_create
+    access_persistent: muc_create
+    history_size: 0
+    default_room_options:
+      mam: true
+      persistent: true
+      members_only: false
+      public: true
+      public_list: true
+      allow_user_invites: true
+  mod_muc_admin: {}
+  mod_offline:
+    access_max_user_messages: max_user_offline_messages
+  mod_ping: {}
+  mod_privacy: {}
+  mod_private: {}
+  mod_pubsub:
+    access_createnode: pubsub_createnode
+    plugins:
+      - flat
+      - pep
+    force_node_config:
+      "**":
+        access_model: open
+        publish_model: publishers
+        persist_items: true
+        max_items: 100
+  mod_roster: {}
+  mod_shared_roster: {}
+  mod_stream_mgmt:
+    resend_on_timeout: if_offline
+  mod_vcard: {}
+  mod_vcard_xupdate: {}
+  mod_version:
+    show_os: false

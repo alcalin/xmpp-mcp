@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Converse.js — xmpp.test lab</title>
+  <link rel="stylesheet" href="https://cdn.conversejs.org/dist/converse.min.css">
+  <script src="https://cdn.conversejs.org/dist/converse.min.js" charset="utf-8"></script>
+</head>
+<body>
+  <div id="conversejs-bg"></div>
+  <script>
+    converse.initialize({
+        authentication: 'login',
+        websocket_url: 'ws://127.0.0.1:5280/xmpp',
+        bosh_service_url: 'http://127.0.0.1:5280/bosh',
+        view_mode: 'fullscreen',
+        auto_reconnect: false,
+        allow_registration: false,
+        allow_contact_requests: true,
+        message_archiving: 'always',
+        i18n: 'en',
+        default_domain: 'xmpp.test',
+        locked_domain: 'xmpp.test',
+        show_client_info: false,
+        discover_connection_methods: false,
+        loglevel: 'info'
+    });
+  </script>
+</body>
+</html>

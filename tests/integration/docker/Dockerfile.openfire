@@ -1,0 +1,29 @@
+# Test-only Openfire image: nasqueron/openfire:4.8.1 + the REST API plugin
+# + a pre-baked openfire.xml with an <autosetup/> block so the wizard never
+# runs. The result boots ready: domain=xmpp.test, admin=admin/adminpw, and
+# four test users (bot, alice, bob, carol).
+
+FROM nasqueron/openfire:4.8.1
+
+USER root
+
+# Seed /var/lib/openfire/conf from the image's defaults (the entrypoint only
+# does this when the dir is missing, but we're about to overwrite one file).
+RUN mkdir -p /var/lib/openfire/conf \
+    && cp -a /etc/openfire/. /var/lib/openfire/conf/ \
+    && chown -R openfire:openfire /var/lib/openfire/conf
+
+# Pre-install the REST API plugin (pinned to a version compatible with 4.8.x).
+ADD --chown=openfire:openfire \
+    https://www.igniterealtime.org/projects/openfire/plugins/1.10.2/restAPI.jar \
+    /var/lib/openfire/plugins/restAPI.jar
+
+# Pre-install the Monitoring Service plugin. Provides XEP-0313 MAM for MUC
+# rooms — required by the mam_query MCP tool so the bot can search room
+# history across MCP-server restarts.
+ADD --chown=openfire:openfire \
+    https://www.igniterealtime.org/projects/openfire/plugins/2.6.1/monitoring.jar \
+    /var/lib/openfire/plugins/monitoring.jar
+
+# Overlay our autosetup-enabled config.
+COPY --chown=openfire:openfire openfire.xml /var/lib/openfire/conf/openfire.xml

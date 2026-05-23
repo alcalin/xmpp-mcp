@@ -1,0 +1,38 @@
+# Alternative lab — ejabberd 25.x with MAM that actually answers IQ queries.
+# Same ports, same XMPP domain (xmpp.test), same accounts as the Openfire
+# compose, so start-lab-ejabberd.py and scripts/seed_chat.py work without
+# changes to env vars.
+#
+# Bring up:
+#   python start-lab-ejabberd.py
+# Tear down:
+#   docker compose -f tests/integration/docker/ejabberd/docker-compose.yml down -v
+
+name: xmpp-mcp-ej
+
+services:
+  ejabberd:
+    image: ejabberd/ecs:25.04
+    container_name: xmpp-mcp-ej-1
+    hostname: xmpp.test
+    environment:
+      ERLANG_NODE_ARG: "ejabberd@xmpp.test"
+      EJABBERD_CONFIG_PATH: "/home/ejabberd/conf/ejabberd.yml"
+    ports:
+      - "127.0.0.1:5222:5222"   # XMPP C2S
+      - "127.0.0.1:5269:5269"   # XMPP S2S
+      - "127.0.0.1:5275:5275"   # XMPP external components (XEP-0114)
+      - "127.0.0.1:5280:5280"   # HTTP admin + /api
+    volumes:
+      - ./ejabberd.yml:/home/ejabberd/conf/ejabberd.yml:ro
+      - ejabberd-data:/home/ejabberd/database
+    healthcheck:
+      # ejabberd's HTTP admin returns 200 once the server is up.
+      test: ["CMD-SHELL", "ejabberdctl status | grep -q 'ejabberd .* is running'"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  ejabberd-data:

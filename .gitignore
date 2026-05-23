@@ -1,0 +1,13 @@
+.venv/
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+# Local MCP client config — machine-specific paths + lab creds.
+# Copy .mcp.json.example to .mcp.json and edit for your setup.
+.mcp.json
+# Per-developer Claude Code settings (permissions etc.)
+.claude/settings.local.json

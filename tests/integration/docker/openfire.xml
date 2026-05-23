@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Pre-configured Openfire 4.8.1 for the xmpp-mcp integration test suite.
+
+  The <autosetup/> block tells Openfire to skip the web setup wizard, set the
+  admin password, and pre-create the test users. The embedded HSQLDB is wired
+  via top-level <connectionProvider/> — Openfire's autosetup handler only
+  covers the "standard" (external JDBC) path, so the embedded driver has to be
+  set the same way the wizard would record it on disk.
+
+  Openfire deletes <autosetup/> after first boot, which is fine — every test
+  run uses a fresh container.
+-->
+<jive>
+    <adminConsole>
+        <port>9090</port>
+        <secureport>9091</secureport>
+        <interface>0.0.0.0</interface>
+    </adminConsole>
+
+    <connectionProvider>
+        <className>org.jivesoftware.database.EmbeddedConnectionProvider</className>
+    </connectionProvider>
+
+    <autosetup>
+        <run>true</run>
+        <locale>en</locale>
+        <xmpp>
+            <domain>xmpp.test</domain>
+            <fqdn>xmpp.test</fqdn>
+            <auth>
+                <anonymous>false</anonymous>
+            </auth>
+            <socket>
+                <ssl>
+                    <active>false</active>
+                </ssl>
+            </socket>
+        </xmpp>
+        <encryption>
+            <algorithm>AES</algorithm>
+            <key>integration-test-key-not-a-secret</key>
+        </encryption>
+        <admin>
+            <email>admin@xmpp.test</email>
+            <password>adminpw</password>
+        </admin>
+        <authprovider>
+            <mode>default</mode>
+        </authprovider>
+        <users>
+            <user1>
+                <username>bot</username>
+                <password>botpw</password>
+                <name>XMPP MCP Bot</name>
+                <email>bot@xmpp.test</email>
+            </user1>
+            <user2>
+                <username>alice</username>
+                <password>alicepw</password>
+                <name>Alice</name>
+                <email>alice@xmpp.test</email>
+            </user2>
+            <user3>
+                <username>bob</username>
+                <password>bobpw</password>
+                <name>Bob</name>
+                <email>bob@xmpp.test</email>
+            </user3>
+            <user4>
+                <username>carol</username>
+                <password>carolpw</password>
+                <name>Carol</name>
+                <email>carol@xmpp.test</email>
+            </user4>
+        </users>
+    </autosetup>
+</jive>

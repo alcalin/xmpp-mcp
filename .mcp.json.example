@@ -1,0 +1,20 @@
+{
+  "_comment": "Copy to .mcp.json (gitignored) and adjust. Paths are relative to the repo root, which is where Claude Code launches a project-scoped MCP server. If your client runs from elsewhere (e.g. a user-level ~/.claude.json), use absolute paths. run-server.py re-execs into .venv, so a bare 'python' on PATH works too. The env block shown matches the bundled Openfire lab (start-lab.py) — change it for a real server.",
+  "mcpServers": {
+    "xmpp": {
+      "command": ".venv\\Scripts\\python.exe",
+      "args": ["run-server.py"],
+      "env": {
+        "XMPP_JID": "bot@xmpp.test",
+        "XMPP_PASSWORD": "botpw",
+        "XMPP_HOST": "127.0.0.1",
+        "XMPP_PORT": "5222",
+        "XMPP_TLS_INSECURE": "true",
+        "XMPP_NICK": "xmpp-mcp",
+        "OPENFIRE_BASE_URL": "http://127.0.0.1:9090",
+        "OPENFIRE_ADMIN_USER": "admin",
+        "OPENFIRE_ADMIN_PASSWORD": "adminpw"
+      }
+    }
+  }
+}

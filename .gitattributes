@@ -1,0 +1,6 @@
+# Normalize line endings: store text as LF in the repo, check out native.
+* text=auto eol=lf
+
+# Binary / generated artifacts — never touch.
+*.exe binary
+*.png binary

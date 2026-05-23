@@ -1,0 +1,41 @@
+# Brings up a single Openfire container pre-configured for the xmpp-mcp
+# integration tests. Run manually with:
+#
+#   docker compose -f tests/integration/docker/docker-compose.yml up -d
+#   docker compose -f tests/integration/docker/docker-compose.yml down -v
+#
+# or let the pytest `openfire` fixture in conftest.py do it for you.
+
+name: xmpp-mcp-test
+
+services:
+  openfire:
+    build:
+      context: .
+      dockerfile: Dockerfile.openfire
+    image: xmpp-mcp/openfire-test:4.8.1
+    ports:
+      - "127.0.0.1:5222:5222"  # XMPP C2S
+      - "127.0.0.1:5269:5269"  # XMPP S2S (unused but exposed for symmetry)
+      - "127.0.0.1:5275:5275"  # XMPP external components (XEP-0114) — used by
+                               # the XEP-0258 stub component in tests
+      - "127.0.0.1:9090:9090"  # Admin console + REST API
+    volumes:
+      # Persist Openfire's data dir (embedded HSQLDB + Lucene indexes + room
+      # state + system properties) across `docker compose down`. Without this,
+      # every container removal wipes the DB and forces the Monitoring
+      # plugin to rebuild its Lucene indexes from empty. Tests still get a
+      # clean slate via `down -v` (which deletes named volumes too).
+      - openfire-data:/var/lib/openfire
+    healthcheck:
+      # wget is present in the base image (curl is not). The login page returns
+      # 200 once the admin console is up — that's all this probe needs to know;
+      # the fixture does the deeper REST-API readiness check.
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/login.jsp"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  openfire-data:
