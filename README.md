@@ -4,7 +4,9 @@
 
 An [MCP](https://modelcontextprotocol.io) server that lets an LLM operate over
 **XMPP** — send and receive direct and group-chat messages, manage presence and
-rosters, run service discovery, and apply **XEP-0258 security labels**.
+rosters, run service discovery, drive **XEP-0060 pubsub with XEP-0004 dynamic
+data forms** (read nodes, publish/fill forms, react to live events), and apply
+**XEP-0258 security labels**.
 
 It targets two XMPP server products in particular:
 
@@ -94,6 +96,8 @@ If you built the standalone executable (see below), point `command` at
 |---|---|
 | `send_message` | Send a 1:1 chat message (optional XEP-0258 `security_label`) |
 | `get_recent_messages` | Drain buffered inbound messages |
+| `search_messages` | Non-destructive search over the inbox (by query/room/participant/since) — powers "who said X about Y" |
+| `mam_query` | Query server-side MUC history (XEP-0313); works on ejabberd, see notes for Openfire |
 | `join_room` / `leave_room` | Join / leave a MUC room |
 | `send_room_message` | Send to a joined MUC room (optional `security_label`) |
 | `list_room_occupants` | Occupants of a joined room with role/affiliation |
@@ -104,6 +108,32 @@ If you built the standalone executable (see below), point `command` at
 | `of_list_users` / `of_get_user` / `of_create_user` / `of_delete_user` | Openfire user admin |
 | `of_add_group_member` | Add a user to an Openfire group |
 | `of_list_rooms` / `of_create_room` | Openfire MUC room admin |
+
+### Pubsub (XEP-0060) + dynamic data forms (XEP-0004)
+
+Full pubsub coverage — read and write nodes, publish and fill dynamic forms,
+and react to live events:
+
+| Area | Tools |
+|---|---|
+| Nodes | `pubsub_list_nodes`, `pubsub_create_node`, `pubsub_delete_node` |
+| Config | `pubsub_get_node_config`, `pubsub_configure_node` |
+| Forms (XEP-0004) | `pubsub_publish_form_template`, `pubsub_submit_form`, `pubsub_read_forms`, `pubsub_get_item` |
+| Raw payloads | `pubsub_publish_raw`, `pubsub_get_items_raw` |
+| Item ops | `pubsub_retract_item`, `pubsub_purge_node` |
+| Subscriptions | `pubsub_subscribe`, `pubsub_unsubscribe`, `pubsub_list_subscriptions`, `pubsub_list_node_subscriptions`, `pubsub_get_subscription_options`, `pubsub_set_subscription_options` |
+| Affiliations | `pubsub_list_my_affiliations`, `pubsub_list_node_affiliations`, `pubsub_set_affiliations` |
+| Live events | `pubsub_get_recent_events` (drain buffered publish/retract notifications) |
+
+Form payloads are exchanged as `DataForm` dicts
+(`{type, title?, instructions?, fields[]}`) — never raw XML; `pubsub_publish_raw`
+/ `pubsub_get_items_raw` are the escape hatch for non-form items (ATOM, JSON,
+PEP). `pubsub_get_item` auto-detects form vs raw. See `scripts/demo_pubsub_forms.py`
+for a publish → fill → read-back walkthrough.
+
+> On Openfire, create form nodes with
+> `config_values={"pubsub#persist_items": true, "pubsub#max_items": "100"}` —
+> the default `max_items=1` evicts a template as soon as someone submits.
 
 Resources: `xmpp://roster`, `xmpp://server-info`.
 
